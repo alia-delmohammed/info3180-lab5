@@ -1,3 +1,5 @@
+import sys
+print(sys.path)
 import os
 from dotenv import load_dotenv
 
