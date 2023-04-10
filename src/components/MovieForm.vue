@@ -13,6 +13,8 @@
         <input type="file" name="poster" class="form-control-file" @change="onPosterUpload">
       </div>
       <button type="submit" class="btn btn-primary">Submit</button>
+      <div v-if="message" class="mt-3 alert alert-success">{{ message }}</div>
+      <div v-if="errorMessage" class="mt-3 alert alert-danger">{{ errorMessage }}</div>
     </form>
   </template>
   
@@ -26,6 +28,9 @@
     poster: null,
   });
   
+  let message = ref('');
+  let errorMessage = ref('');
+
   function onPosterUpload(event) {
     formData.poster = event.target.files[0];
   }
@@ -56,15 +61,22 @@ function getCsrfToken() {
     body: form_data,
     headers: {'X-CSRFToken': csrf_token.value}
   })
-   .then(function (response) {
+  .then(function (response) {
+     if (!response.ok) {
+       throw Error(response.statusText);
+     }
      return response.json();
    })
    .then(function (data) {
      // display a success message
      console.log(data);
+     message.value = 'Movie successfully saved!';
+     errorMessage.value = '';
    })
    .catch(function (error) {
      console.log('There was a problem with the fetch operation:', error);
+     errorMessage.value = 'Error saving movie';
+     message.value = '';
    });
 }
 
