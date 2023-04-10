@@ -9,7 +9,7 @@ from app import app, db
 from werkzeug.utils import secure_filename
 from app.models import Movie
 from app.forms import MovieForm
-from flask import render_template, request, jsonify, send_file
+from flask import render_template, request, jsonify, send_file, send_from_directory
 from flask_wtf.csrf import generate_csrf
 import os
 
@@ -76,6 +76,20 @@ def movies():
     # Return the form validation errors
     errors = form_errors(form)
     return jsonify(errors=errors), 400
+
+@app.route('/api/v1/posters/<filename>', methods=['GET'])
+def get_poster(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
+@app.route('/api/v1/movielist', methods=['GET'])
+def get_movies():
+    movies = Movie.query.all()
+    return jsonify({'movies': [{'id': movie.id,
+                                'title': movie.title,
+                                'description': movie.description,
+                                'poster': f"/api/v1/posters/{movie.poster}"} for movie in movies]})
+
 
 
 @app.route('/api/v1/csrf-token', methods=['GET'])
