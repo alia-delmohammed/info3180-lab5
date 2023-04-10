@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 from app.models import Movie
 from app.forms import MovieForm
 from flask import render_template, request, jsonify, send_file
+from flask_wtf.csrf import generate_csrf
 import os
 
 
@@ -48,16 +49,18 @@ def movies():
     if form.validate_on_submit():
         title = form.title.data
         description = form.description.data
-        poster = request.files['poster']
+        poster = request.files.get('poster') # use .get() to check if poster is in the request
 
-        # Save the uploaded poster to the uploads folder
+        # Check if poster was included in the request before attempting to save it
         filename = secure_filename(poster.filename)
-        poster.save(os.path.join(
-            app.config['UPLOAD_FOLDER'], filename
-        ))
+        UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+        if not os.path.exists(UPLOAD_FOLDER):
+            os.makedirs(UPLOAD_FOLDER)
+        poster.save(os.path.join(UPLOAD_FOLDER, filename))
+
 
         # Create a new movie object and save it to the database
-        movie = Movie(title=title, description=description, poster=filename)
+        movie = Movie(title=title, description=description, poster=filename if poster else None) # if poster is not included, set filename to None
         db.session.add(movie)
         db.session.commit()
 
@@ -73,6 +76,11 @@ def movies():
     # Return the form validation errors
     errors = form_errors(form)
     return jsonify(errors=errors), 400
+
+
+@app.route('/api/v1/csrf-token', methods=['GET'])
+def get_csrf():
+ return jsonify({'csrf_token': generate_csrf()})
 
 
 @app.route('/<file_name>.txt')
